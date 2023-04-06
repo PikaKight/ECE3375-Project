@@ -150,7 +150,9 @@ int main(void){
     int stats;
 	int defaultTime = 300;
     int time = defaultTime;
-    
+	
+    *(LED_ptr) |= 0x1;
+	
     while(1){
         int swVal = ReadSwitch();
         counter = timer->count;
@@ -179,7 +181,7 @@ int main(void){
                 case 8:
                     timer->count = interval;
                     time = defaultTime;
-					*(LED_ptr) &= ~0x1;
+					*(LED_ptr) |= 0x1;
                     break;
 
                 default:
@@ -193,7 +195,7 @@ int main(void){
             timer->status = 1; 
         }
 		if (time == 0){
-			*(LED_ptr) |= 0x1;
+			*(LED_ptr) &= ~0x1;
 			timer->control = 2;
 		}
     }
