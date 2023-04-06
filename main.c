@@ -172,15 +172,19 @@ int main(void){
                     timer->control = 2;
                     break;
                 
-                // Lap
+                // adds time to timer
                 case 4: 
-                    time += 60;
+                    *(LED_ptr) |= 0x1;
+                    if (time < 999999){
+                        time += 10;
+                    }
                     break;
 
                 // Clear
                 case 8:
                     timer->count = interval;
                     time = defaultTime;
+                    timer->status = 1;
 					*(LED_ptr) |= 0x1;
                     break;
 
@@ -190,13 +194,15 @@ int main(void){
             DisplayHex(time);
         }
 
+        
+		if (time == 0){
+			*(LED_ptr) &= ~0x1;
+            timer->status = 0;
+			timer->control = 2;
+		}
         if (stats == 1){
             time--;
             timer->status = 1; 
         }
-		if (time == 0){
-			*(LED_ptr) &= ~0x1;
-			timer->control = 2;
-		}
     }
 }
