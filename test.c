@@ -187,13 +187,6 @@ int main(void)
 					timer->control = 2;
 					break;
 
-				// Change Time
-				case 'n':
-					*(LED_ptr) |= 0x1;
-					timer->status = 1;
-					// code for changing time based on the JTAG UART Input
-					break;
-
 				// Clear
 				case 'c':
 					timer->count = interval;
@@ -202,17 +195,25 @@ int main(void)
 					timerActive = 0;
 					break;
 
+                
+				// Change Time
+				case '3':
+					timer->status = 1;
+					// code for changing time based on the JTAG UART Input
+					break;
+                
+
 				default:
 					break;
 			}
 		}
 		
 		switch(action){
-			case '0':
+			case '1':
 				*(LED_ptr) |= 0x1;
 				lightStat = 1;
 				break;
-			case '1':
+			case '0':
 				*(LED_ptr) &= ~0x1;
 				lightStat = 0;
 				break;
