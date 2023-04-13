@@ -80,8 +80,11 @@
 #define ICDICFR 0xC00              // offset to interrupt configuration regs
 
 #include <stdio.h>
+#include <string.h>
 
-#define LED_BASE 0xFF200000
+
+#define JTAG_UART_CONTROL_WRITE_MASK 0x00000002;
+#define JTAG_UART_CONTROL_READ_MASK 0x00000001;
 
 // A9 Private Timer
 typedef struct Timer
@@ -91,6 +94,12 @@ typedef struct Timer
     int control;
     int status;
 } Timer;
+
+typedef struct _jtag_uart
+{
+  int data;
+  int control;
+} jtag_uart;
 
 void DisplayHex(int value)
 {
@@ -130,34 +139,14 @@ void DisplayHex(int value)
     *HEX_ptr2 = segDis2;
 }
 
-int ReadSwitch(void)
-{
-    volatile int *SW_ptr = (int *)SW_BASE;
-    int swVal = *SW_ptr;
-    return swVal;
-}
-
-int ReadBtn(void)
-{
-    volatile int *BTN_ptr = (int *)KEY_BASE;
-    int btnVal = *BTN_ptr;
-    return btnVal;
-}
-
-void jtag_uart_write(int data){
-
-}
-
-int jtag_uart_read(){
-    
-}
 
 int main(void)
 {
     volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;
     volatile int *LED_ptr = (int *)LED_BASE;
-    volatile int *JTAG_Dptr = (int *)JTAG_UART_BASE;
-    volatile int *JTAG_Cptr = (int *)(JTAG_UART_BASE + 4);
+    volatile jtag_uart* const uart_ptr = ( jtag_uart* )0xFF201000;
+    int read_uart;
+
 
     volatile int interval = 2300000;
     timer->load = interval;
@@ -165,61 +154,75 @@ int main(void)
     int stats;
     int defaultTime = 300;
     int time = defaultTime;
+	int lightStat = 0;
+	int timerActive = 0;
 
-    *(LED_ptr) |= 0x1;
+    *(LED_ptr) &= ~0x1;
 
     while (1)
     {
-        int swVal = ReadSwitch();
         counter = timer->count;
-        stats = timer->status;
-
-        if (swVal == 0)
-        {
-            int action = ReadBtn();
-
-            switch (action)
-            {
-            // Start
-            case 1:
-                timer->control = 3;
-                break;
-
-            // Stop
-            case 2:
-                timer->control = 2;
-                break;
-
-            // adds time to timer
-            case 4:
-                *(LED_ptr) |= 0x1;
-                if (time < 999999)
-                {
-                    time += 10;
-                }
-                break;
-
-            // Clear
-            case 8:
-                timer->count = interval;
-                time = defaultTime;
-                timer->status = 1;
-                *(LED_ptr) |= 0x1;
-                break;
-
-            default:
-                break;
-            }
-            DisplayHex(time);
-        }
-
-        if (time == 0)
+        stats = timer->status | 0;
+        int action;
+		action = uart_ptr->data;
+			
+		if (time == 0 && timerActive == 1)
         {
             *(LED_ptr) &= ~0x1;
-            timer->status = 0;
-            timer->control = 2;
+			lightStat = 0;
+			timerActive = 0;
         }
-        if (stats == 1)
+		
+		if (lightStat == 1){ 
+			switch (action)
+			{
+				// Start
+				case 's':
+					timer->control = 3;
+					timerActive = 1;
+					break;
+
+				// Pause
+				case 'p':
+					timer->control = 2;
+					break;
+
+				// Change Time
+				case 'n':
+					*(LED_ptr) |= 0x1;
+					timer->status = 1;
+					// code for changing time based on the JTAG UART Input
+					break;
+
+				// Clear
+				case 'c':
+					timer->count = interval;
+					time = defaultTime;
+					timer->status = 1;
+					timerActive = 0;
+					break;
+
+				default:
+					break;
+			}
+		}
+		
+		switch(action){
+			case '0':
+				*(LED_ptr) |= 0x1;
+				lightStat = 1;
+				break;
+			case '1':
+				*(LED_ptr) &= ~0x1;
+				lightStat = 0;
+				break;
+			default:
+				break;
+		}
+		
+        DisplayHex(time);
+       
+        if (stats == 1 && timerActive == 1)
         {
             time--;
             timer->status = 1;

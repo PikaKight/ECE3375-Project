@@ -1,6 +1,8 @@
 #include "address_map_arm.h"
 
 #include <stdio.h>
+#include <string.h>
+
 
 #define JTAG_UART_CONTROL_WRITE_MASK 0x00000002;
 #define JTAG_UART_CONTROL_READ_MASK 0x00000001;
@@ -58,33 +60,10 @@ void DisplayHex(int value)
     *HEX_ptr2 = segDis2;
 }
 
-int ReadSwitch(void)
-{
-    volatile int *SW_ptr = (int *)SW_BASE;
-    int swVal = *SW_ptr;
-    return swVal;
-}
-
-int ReadBtn(void)
-{
-    volatile int *BTN_ptr = (int *)KEY_BASE;
-    int btnVal = *BTN_ptr;
-    return btnVal;
-}
-
 int ReadJTAG(){
-    volatile int* jtag_uart_data_reg = (int*)JTAG_UART_BASE;
-    volatile int* jtag_uart_control_reg = (int*)(JTAG_UART_BASE + 4);
-    *jtag_uart_control_reg = JTAG_UART_CONTROL_READ_MASK;
-    return (int)(*jtag_uart_data_reg);
+    
 }
 
-void WriteJTAG(int data){
-    volatile int* jtag_uart_data_reg = (int*)JTAG_UART_BASE;
-    volatile int* jtag_uart_control_reg = (int*)(JTAG_UART_BASE + 4);
-    *jtag_uart_data_reg = (int)data;
-    *jtag_uart_control_reg = JTAG_UART_CONTROL_WRITE_MASK;
-}
 
 int main(void)
 {
@@ -105,37 +84,33 @@ int main(void)
 
     while (1)
     {
-        int swVal = ReadSwitch();
         counter = timer->count;
         stats = timer->status;
+        
+        int action = uart_ptr->data;
 
-        if (swVal == 0)
+        if (action == 'v')
         {
-            int action = ReadBtn();
-
             switch (action)
             {
             // Start
-            case 1:
+            case 's':
                 timer->control = 3;
                 break;
 
-            // Stop
-            case 2:
+            // Pause
+            case 'p':
                 timer->control = 2;
                 break;
 
-            // adds time to timer
-            case 4:
+            // Change Time
+            case 'n':
                 *(LED_ptr) |= 0x1;
-                if (time < 999999)
-                {
-                    time += 10;
-                }
+                // code for changing time based on the JTAG UART Input
                 break;
 
             // Clear
-            case 8:
+            case 'c':
                 timer->count = interval;
                 time = defaultTime;
                 timer->status = 1;
