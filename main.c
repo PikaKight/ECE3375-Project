@@ -15,7 +15,7 @@
 #define FPGA_CHAR_END         0xC9001FFF
 
 /* Cyclone V FPGA devices */
-#define LED_BASE	      0xFF200000
+#define LED_BASE	          0xFF200000
 #define LEDR_BASE             0xFF200000
 #define HEX3_HEX0_BASE        0xFF200020
 #define HEX5_HEX4_BASE        0xFF200030
@@ -78,11 +78,8 @@
 #define ICDICER               0x180         // offset to interrupt clear-enable regs
 #define ICDIPTR               0x800         // offset to interrupt processor targets regs
 #define ICDICFR               0xC00         // offset to interrupt configuration regs
+
 #include <stdio.h>
-
-	
-#define LED_BASE 0xFF200000
-
 // A9 Private Timer
 typedef struct Timer{
     int load;
