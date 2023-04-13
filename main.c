@@ -60,79 +60,133 @@ void DisplayHex(int value)
     *HEX_ptr2 = segDis2;
 }
 
-int ReadJTAG(){
-    
-}
-
-
 int main(void)
 {
-    volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;
+    volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;   
     volatile int *LED_ptr = (int *)LED_BASE;
     volatile jtag_uart* const uart_ptr = ( jtag_uart* )0xFF201000;
-    int read_uart;
+    
+    char* instrcut = "Controls:\n"
+                       "\t0: Turns off the Light and Timer\n"
+                       "\t1: Turns on the Light and Timer\n"
+                       "\tIf the Light is on, the following controls will work\n"
+                       "\ts: Start Timer\n"
+                       "\tc: Resets Timer\n"
+                       "\tp: Pause Timer\n"
+                       "\tEnter Your Command:";
+    
+    
+
+    for ( int i = 0; instrcut[i] != '\0'; i++ ){
+        // write to JTAG UART
+        uart_ptr->data = instrcut[i];
+	}
 
 
     volatile int interval = 2300000;
     timer->load = interval;
     int counter;
     int stats;
-    int defaultTime = 300;
+    int defaultTime = 0;
     int time = defaultTime;
+	int lightStat = 0;
+	int timerActive = 0;
+    int timeUpdated = 0; // Added flag to keep track of time update
+    int prevTime = 0;    // Added variable to keep track of previous time
 
-    *(LED_ptr) |= 0x1;
-
+    *(LED_ptr) &= ~0x1;
+    
     while (1)
     {
         counter = timer->count;
-        stats = timer->status;
-        
-        int action = uart_ptr->data;
-
-        if (action == 'v')
-        {
-            switch (action)
-            {
-            // Start
-            case 's':
-                timer->control = 3;
-                break;
-
-            // Pause
-            case 'p':
-                timer->control = 2;
-                break;
-
-            // Change Time
-            case 'n':
-                *(LED_ptr) |= 0x1;
-                // code for changing time based on the JTAG UART Input
-                break;
-
-            // Clear
-            case 'c':
-                timer->count = interval;
-                time = defaultTime;
-                timer->status = 1;
-                *(LED_ptr) |= 0x1;
-                break;
-
-            default:
-                break;
-            }
-            DisplayHex(time);
-        }
-
-        if (time == 0)
+        stats = timer->status | 0;
+        int action;
+		action = uart_ptr->data;
+			
+		if (time == 0 && timerActive == 1)
         {
             *(LED_ptr) &= ~0x1;
-            timer->status = 0;
-            timer->control = 2;
+			lightStat = 0;
+			timerActive = 0;
         }
-        if (stats == 1)
+		
+		if (lightStat == 1){ 
+			switch (action)
+			{
+				// Start
+				case 's':
+					timer->control = 3;
+					timerActive = 1;
+					break;
+
+				// Pause
+				case 'p':
+					timer->control = 2;
+					break;
+
+				// Clear
+				case 'c':
+					timer->count = interval;
+					time = defaultTime;
+					timer->status = 1;
+					timerActive = 0;
+					break;
+
+                
+				case '3':
+                    if (!timeUpdated) // Check if time has been updated already
+                    {
+                        if (!timerActive) // Check if timer is paused
+                        {
+                            prevTime = time; // Save previous time
+                        }
+                        time += 100;
+                        timerActive = 0; // Pause the timer
+                        timeUpdated = 1; // Set the flag to indicate time update
+                    }
+                    break;
+				
+				// Change Time + 60 seconds
+                case '5':
+                    if (!timeUpdated) // Check if time has been updated already
+                    {
+                        if (!timerActive) // Check if timer is paused
+                        {
+                            prevTime = time; // Save previous time
+                        }
+                        time += 6000;
+                        timerActive = 0; // Pause the timer
+                        timeUpdated = 1; // Set the flag to indicate time update
+                    }
+                    break;
+
+                default:
+                    timeUpdated = 0; // Reset the flag if any other input is entered
+                    break;
+			}
+		}
+		
+		switch(action){
+			case '0':
+				*(LED_ptr) &= ~0x1;
+				lightStat = 0;
+                time = defaultTime;
+				break;
+			case '1':
+				*(LED_ptr) |= 0x1;
+				lightStat = 1;
+				break;
+			
+			default:
+				break;
+		}
+		
+        DisplayHex(time);
+        
+        if (stats == 1 && timerActive == 1)
         {
             time--;
             timer->status = 1;
         }
-    }
+	}
 }

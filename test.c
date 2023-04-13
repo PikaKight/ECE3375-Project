@@ -141,7 +141,7 @@ void DisplayHex(int value)
 
 int main(void)
 {
-    volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;
+    volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;   
     volatile int *LED_ptr = (int *)LED_BASE;
     volatile jtag_uart* const uart_ptr = ( jtag_uart* )0xFF201000;
     
