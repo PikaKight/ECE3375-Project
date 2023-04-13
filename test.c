@@ -153,20 +153,23 @@ int main(void)
                        "\tc: Resets Timer\n"
                        "\tp: Pause Timer\n"
                        "\tEnter Your Command:";
-    for ( int i = 0; instrcut[i] != '\0'; i++ ){
-        // write to JTAG UART
-        uart_ptr->data = instrcut[i];
-	}
+                       
+    // for ( int i = 0; instrcut[i] != '\0'; i++ ){
+    //     // write to JTAG UART
+    //     uart_ptr->data = instrcut[i];
+	// }
 
 
     volatile int interval = 2300000;
     timer->load = interval;
     int counter;
     int stats;
-    int defaultTime = 300;
+    int defaultTime = 0;
     int time = defaultTime;
 	int lightStat = 0;
 	int timerActive = 0;
+    int timeUpdated = 0; // Added flag to keep track of time update
+    int prevTime = 0;    // Added variable to keep track of previous time
 
     *(LED_ptr) &= ~0x1;
     
@@ -207,29 +210,44 @@ int main(void)
 					break;
 
                 
-				// Change Time
 				case '3':
-					timer->status = 1;
-					// code for changing time based on the JTAG UART Input
-					break;
-                
+                    if (!timeUpdated) // Check if time has been updated already
+                    {
+                        if (!timerActive) // Check if timer is paused
+                        {
+                            prevTime = time; // Save previous time
+                        }
+                        time += 100;
+                        timerActive = 0; // Pause the timer
+                        timeUpdated = 1; // Set the flag to indicate time update
+                    }
+                    break;
+				
+				// Change Time + 60 seconds
+                case '5':
+                    if (!timeUpdated) // Check if time has been updated already
+                    {
+                        if (!timerActive) // Check if timer is paused
+                        {
+                            prevTime = time; // Save previous time
+                        }
+                        time += 6000;
+                        timerActive = 0; // Pause the timer
+                        timeUpdated = 1; // Set the flag to indicate time update
+                    }
+                    break;
 
-				default:
-					break;
+                default:
+                    timeUpdated = 0; // Reset the flag if any other input is entered
+                    break;
 			}
 		}
 		
 		switch(action){
-<<<<<<< HEAD
-			case '1':
-				*(LED_ptr) |= 0x1;
-				lightStat = 1;
-				break;
-=======
->>>>>>> f4977ecc166b8d0e5f942c7927b079a51e75af97
 			case '0':
 				*(LED_ptr) &= ~0x1;
 				lightStat = 0;
+                time = defaultTime;
 				break;
 			case '1':
 				*(LED_ptr) |= 0x1;
