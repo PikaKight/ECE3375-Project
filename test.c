@@ -139,13 +139,24 @@ void DisplayHex(int value)
     *HEX_ptr2 = segDis2;
 }
 
-
 int main(void)
 {
     volatile Timer *const timer = (Timer *)MPCORE_PRIV_TIMER;
     volatile int *LED_ptr = (int *)LED_BASE;
     volatile jtag_uart* const uart_ptr = ( jtag_uart* )0xFF201000;
-    int read_uart;
+    
+    char* instrcut = "Controls:\n"
+                       "\t0: Turns off the Light and Timer\n"
+                       "\t1: Turns on the Light and Timer\n"
+                       "\tIf the Light is on, the following controls will work\n"
+                       "\ts: Start Timer\n"
+                       "\tc: Resets Timer\n"
+                       "\tp: Pause Timer\n"
+                       "\tEnter Your Command:";
+    for ( int i = 0; instrcut[i] != '\0'; i++ ){
+        // write to JTAG UART
+        uart_ptr->data = instrcut[i];
+	}
 
 
     volatile int interval = 2300000;
@@ -158,7 +169,7 @@ int main(void)
 	int timerActive = 0;
 
     *(LED_ptr) &= ~0x1;
-
+    
     while (1)
     {
         counter = timer->count;
@@ -209,24 +220,32 @@ int main(void)
 		}
 		
 		switch(action){
+<<<<<<< HEAD
 			case '1':
 				*(LED_ptr) |= 0x1;
 				lightStat = 1;
 				break;
+=======
+>>>>>>> f4977ecc166b8d0e5f942c7927b079a51e75af97
 			case '0':
 				*(LED_ptr) &= ~0x1;
 				lightStat = 0;
 				break;
+			case '1':
+				*(LED_ptr) |= 0x1;
+				lightStat = 1;
+				break;
+			
 			default:
 				break;
 		}
 		
         DisplayHex(time);
-       
+        
         if (stats == 1 && timerActive == 1)
         {
             time--;
             timer->status = 1;
         }
-    }
+	}
 }
